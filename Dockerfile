@@ -14,6 +14,9 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 # Allow .htaccess to override Apache settings
 RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 
+# Fix ServerName warning
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 # Copy project files to Apache root
 COPY . /var/www/html/
 

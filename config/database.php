@@ -1,24 +1,33 @@
 <?php
 
-
 class Database {
     private static $instance = null;
     private $connection;
     
-    
-    private $host = 'localhost';
-    private $username = 'root';
-    private $password = '';
-    private $database = 'theater_seat_system';
+    // Use environment variables for production, fallback to local dev values
+    private $host;
+    private $username;
+    private $password;
+    private $database;
+    private $port;
     private $charset = 'utf8mb4';
     
     private function __construct() {
+        // Load configuration from environment variables (for Render)
+        // Falls back to local development values if not set
+        $this->host = getenv('DB_HOST') ?: 'localhost';
+        $this->username = getenv('DB_USER') ?: 'root';
+        $this->password = getenv('DB_PASS') ?: '';
+        $this->database = getenv('DB_NAME') ?: 'theater_seat_system';
+        $this->port = getenv('DB_PORT') ?: 3306;
+        
         try {
             $this->connection = new mysqli(
                 $this->host,
                 $this->username,
                 $this->password,
-                $this->database
+                $this->database,
+                $this->port
             );
             
             if ($this->connection->connect_error) {
