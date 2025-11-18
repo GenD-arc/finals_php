@@ -37,12 +37,16 @@ class Event extends BaseModel {
      * 
      * @param string $name
      * @param string $date
+     * @param string $eventDetails
+     * @param string $personInCharge
      * @return int|bool
      */
-    public function createEvent($name, $date) {
+    public function createEvent($name, $date, $eventDetails = '', $personInCharge = '') {
         return $this->create([
             'name' => $name,
             'date' => $date,
+            'event_details' => $eventDetails,
+            'person_in_charge' => $personInCharge,
             'status' => 'active'
         ]);
     }
@@ -53,12 +57,16 @@ class Event extends BaseModel {
      * @param int $id
      * @param string $name
      * @param string $date
+     * @param string $eventDetails
+     * @param string $personInCharge
      * @return bool
      */
-    public function updateEvent($id, $name, $date) {
+    public function updateEvent($id, $name, $date, $eventDetails = '', $personInCharge = '') {
         return $this->update($id, [
             'name' => $name,
-            'date' => $date
+            'date' => $date,
+            'event_details' => $eventDetails,
+            'person_in_charge' => $personInCharge
         ]);
     }
     
@@ -116,4 +124,34 @@ class Event extends BaseModel {
         $result = $this->queryOne($sql, [$id], 'i');
         return $result !== null;
     }
+
+    /**
+ * Toggle reservations for an event
+ */
+public function toggleReservations($eventId, $enable) {
+    return $this->update($eventId, ['reservations_enabled' => $enable]);
+}
+
+/**
+ * Check if event can accept bookings
+ */
+public function canAcceptBookings($eventId) {
+    $event = $this->find($eventId);
+    
+    // Check if event exists and is active
+    if (!$event || $event['status'] === 'completed') {
+        return false;
+    }
+    
+    // Check if reservations are enabled (handle both string and boolean values)
+    // Some databases return 1/0, others return true/false
+    $reservationsEnabled = $event['reservations_enabled'] ?? true; // Default to true if field doesn't exist
+    
+    // Handle different return types from database
+    if (is_string($reservationsEnabled)) {
+        return $reservationsEnabled === '1' || $reservationsEnabled === 'true';
+    }
+    
+    return (bool)$reservationsEnabled; // Convert to boolean
+}
 }

@@ -9,6 +9,7 @@ require_once __DIR__ . '/../models/Admin.php';
 require_once __DIR__ . '/../models/Event.php';
 require_once __DIR__ . '/../models/Booking.php';
 require_once __DIR__ . '/../models/Maintenance.php';
+require_once __DIR__ . '/../models/VipManager.php';
 
 class AdminController extends BaseController {
     private $adminModel;
@@ -170,4 +171,36 @@ public function dashboard() {
         
         $this->view('admin/event_detail', $data);
     }
+
+    /**
+ * Toggle VIP status for a seat
+ */
+public function toggleVip() {
+    $this->requireAdmin();
+    
+    if (!$this->isPost()) {
+        $this->redirect('admin', ['action' => 'dashboard']);
+    }
+    
+    $eventId = (int)$this->post('event_id');
+    $seatId = (int)$this->post('seat_id');
+    
+    $vipManager = new VipManager();
+    
+    // Toggle the VIP status
+    $success = $vipManager->toggleVipSeat($eventId, $seatId, 'Reserved Guest');
+    
+    if ($success) {
+        // Check current status to show appropriate message
+        if ($vipManager->isVipSeat($eventId, $seatId)) {
+            $this->setFlash('success', 'Seat marked as VIP successfully');
+        } else {
+            $this->setFlash('success', 'VIP reservation removed successfully');
+        }
+    } else {
+        $this->setFlash('error', 'Failed to update VIP status');
+    }
+    
+    $this->redirect('admin', ['action' => 'dashboard', 'event' => $eventId]);
+}
 }

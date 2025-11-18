@@ -1,8 +1,11 @@
 <?php
 /**
  * Front Controller - Main Entry Point
- * Handles all incoming requests and routes them to appropriate controllers
  */
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
 // Start session
 session_start();
@@ -21,6 +24,11 @@ require_once __DIR__ . '/../controllers/UserController.php';
 // Get page and action from request
 $page = $_GET['page'] ?? 'user';
 $action = $_GET['action'] ?? 'index';
+
+// DEBUG: Log the request
+error_log("=== FRONT CONTROLLER ===");
+error_log("Page: $page, Action: $action");
+error_log("POST data: " . print_r($_POST, true));
 
 // Route the request
 try {
@@ -43,6 +51,9 @@ try {
                 case 'view_event':
                     $controller->viewEvent();
                     break;
+                case 'toggle_vip': 
+                    $controller->toggleVip(); 
+                    break;
                 default:
                     $controller->login();
                     break;
@@ -61,6 +72,9 @@ try {
                 case 'complete':
                     $controller->complete();
                     break;
+                case 'toggle_reservations':
+                    $controller->toggleReservations();
+                    break;
                 default:
                     redirect('admin', ['action' => 'dashboard']);
                     break;
@@ -71,6 +85,7 @@ try {
             $controller = new BookingController();
             switch ($action) {
                 case 'create':
+                    error_log("Routing to BookingController::create()");
                     $controller->create();
                     break;
                 case 'remove':
@@ -101,7 +116,20 @@ try {
             break;
     }
 } catch (Exception $e) {
-    // Log error and show generic error message
+    // Log error and show detailed error message
+    error_log("=== APPLICATION EXCEPTION ===");
+    error_log("Error: " . $e->getMessage());
+    error_log("File: " . $e->getFile() . ":" . $e->getLine());
+    error_log("Trace: " . $e->getTraceAsString());
+    
+    // Show detailed error for debugging
+    echo "<h1>Debug Error</h1>";
+    echo "<p><strong>Error:</strong> " . $e->getMessage() . "</p>";
+    echo "<p><strong>File:</strong> " . $e->getFile() . ":" . $e->getLine() . "</p>";
+    echo "<pre><strong>Stack Trace:</strong>\n" . $e->getTraceAsString() . "</pre>";
+    echo "<hr>";
+    echo "<p>An error occurred. Please try again later.</p>";
+    
+    // Also log to error log
     error_log("Application Error: " . $e->getMessage());
-    die("An error occurred. Please try again later.");
 }

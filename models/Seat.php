@@ -88,8 +88,7 @@ class Seat extends BaseModel {
             return '';
         }
         
-        $seatNum = $seat['seat_number'] > 8 ? $seat['seat_number'] - 2 : $seat['seat_number'];
-        return chr(64 + $seat['row_number']) . $seatNum;
+        return chr(64 + $seat['row_number']) . $seat['seat_number'];
     }
     
     /**
@@ -128,4 +127,33 @@ class Seat extends BaseModel {
         
         return $this->queryAll($sql, [$eventId, $eventId], 'ii');
     }
+
+    /**
+ * Check if seat should show maintenance status for a specific event
+ * (Only show maintenance for active/upcoming events, not completed ones)
+ * 
+ * @param int $seatId
+ * @param int $eventId
+ * @return bool
+ */
+public function isInMaintenanceForEvent($seatId, $eventId) {
+    $sql = "SELECT s.status, e.status as event_status
+            FROM {$this->table} s
+            CROSS JOIN events e
+            WHERE s.id = ? AND e.id = ?";
+    
+    $result = $this->queryOne($sql, [$seatId, $eventId], 'ii');
+    
+    if (!$result) {
+        return false;
+    }
+    
+    // If event is completed, ignore maintenance status
+    if ($result['event_status'] === 'completed') {
+        return false;
+    }
+    
+    // For active/upcoming events, return actual maintenance status
+    return $result['status'] === 'maintenance';
+}
 }

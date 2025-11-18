@@ -1,22 +1,17 @@
 <?php
-/**
- * Database Configuration and Connection Handler
- */
+
 
 class Database {
     private static $instance = null;
     private $connection;
     
-    // Database credentials
+    
     private $host = 'localhost';
     private $username = 'root';
     private $password = '';
     private $database = 'theater_seat_system';
     private $charset = 'utf8mb4';
     
-    /**
-     * Private constructor to prevent direct instantiation
-     */
     private function __construct() {
         try {
             $this->connection = new mysqli(

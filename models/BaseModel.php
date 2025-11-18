@@ -85,39 +85,56 @@ abstract class BaseModel {
     }
     
     /**
-     * Update record by ID
-     * 
-     * @param int $id
-     * @param array $data
-     * @return bool
-     */
-    public function update($id, $data) {
-        $setParts = [];
-        $values = [];
+ * Update record by ID
+ * 
+ * @param int $id
+ * @param array $data
+ * @return bool
+ */
+public function update($id, $data) {
+    $setParts = [];
+    $values = [];
+    $types = '';
+    
+    foreach ($data as $column => $value) {
+        $setParts[] = "{$column} = ?";
+        $values[] = $value;
         
-        foreach ($data as $column => $value) {
-            $setParts[] = "{$column} = ?";
-            $values[] = $value;
+        // Determine the type for each value
+        if (is_int($value)) {
+            $types .= 'i'; // integer
+        } elseif (is_float($value)) {
+            $types .= 'd'; // double
+        } elseif (is_bool($value)) {
+            $types .= 'i'; // boolean (stored as int)
+            $values[count($values) - 1] = $value ? 1 : 0; // Convert bool to int
+        } else {
+            $types .= 's'; // string
         }
-        
-        $values[] = $id;
-        $setClause = implode(', ', $setParts);
-        
-        $sql = "UPDATE {$this->table} SET {$setClause} WHERE id = ?";
-        $stmt = $this->conn->prepare($sql);
-        
-        if (!$stmt) {
-            return false;
-        }
-        
-        $types = str_repeat('s', count($values) - 1) . 'i';
-        $stmt->bind_param($types, ...$values);
-        
-        $success = $stmt->execute();
-        $stmt->close();
-        
-        return $success;
     }
+    
+    $values[] = $id;
+    $types .= 'i'; // ID is integer
+    
+    $setClause = implode(', ', $setParts);
+    $sql = "UPDATE {$this->table} SET {$setClause} WHERE id = ?";
+    $stmt = $this->conn->prepare($sql);
+    
+    if (!$stmt) {
+        error_log("Prepare failed: " . $this->conn->error);
+        return false;
+    }
+    
+    $stmt->bind_param($types, ...$values);
+    $success = $stmt->execute();
+    
+    if (!$success) {
+        error_log("Execute failed: " . $stmt->error);
+    }
+    
+    $stmt->close();
+    return $success;
+}
     
     /**
      * Delete record by ID
